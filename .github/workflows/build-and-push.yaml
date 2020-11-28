@@ -1,26 +1,70 @@
-name: etc3 controller build and push
+name: Build, test and push etc3 controller
 
 on:
   push:
-    # branches: [ main ]
+    # Publish `main` as Docker `latest` image.
+    branches:
+      # - main
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
   pull_request:
-    # branches: [ main ]
+
+env:
+  IMAGE_NAME: analytics
 
 jobs:
 
   build:
-    name: Build
+    name: build-and-test
     runs-on: ubuntu-latest
     steps:
-
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
         go-version: ^1.13
-
+    - name: Set u Kubebuilder 2.3.1
+      uses: RyanSiu1995/kubebuilder-action@v1
+      with:
+        version: 2.3.1
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-
     - name: Test
       run: make test
-      
+
+# Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  build-and-push:
+    # Ensure test job passes before pushing image.
+    needs: build-and-test
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build image
+        run: make docker-build
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMG
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "main" ] && VERSION=latest
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          docker tag $IMG $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
