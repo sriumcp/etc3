@@ -1,20 +1,20 @@
 name: Build, test and push etc3 controller
 
-on:
-  push:
-    # Publish `main` as Docker `latest` image.
-    branches:
-      - main
+on: [push]
+  # push:
+  #   # Publish `main` as Docker `latest` image.
+  #   branches:
+  #     - main
 
-    # Publish `v1.2.3` tags as releases.
-    tags:
-      - v*
+  #   # Publish `v1.2.3` tags as releases.
+  #   tags:
+  #     - v*
 
-  # Run tests for any PRs.
-  pull_request:
+  # # Run tests for any PRs.
+  # pull_request:
 
 env:
-  IMAGE_NAME: controller
+  IMG: controller
 
 jobs:
 
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Build image
-        run: make docker-build
+        run: docker build . -t ${IMG}
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
