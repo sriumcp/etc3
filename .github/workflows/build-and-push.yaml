@@ -16,7 +16,7 @@ env:
 jobs:
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
-  test-docker-build-and-push:
+  build-test-and-push:
     # Ensure test job passes before pushing image. Already done as part of make target, so ignoring.
     # needs: build-and-test
     runs-on: ubuntu-latest
@@ -58,7 +58,7 @@ jobs:
           # Strip "v" prefix from tag name
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
           # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
+          [[ "${{ github.ref }}" == *"main" ]] && VERSION=latest
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
           docker tag $IMG $IMAGE_ID:$VERSION
