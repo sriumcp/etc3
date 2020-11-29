@@ -16,7 +16,7 @@ env:
 jobs:
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
-  test-docker-build-and-push:
+  build-test-and-push:
     # Ensure test job passes before pushing image. Already done as part of make target, so ignoring.
     # needs: build-and-test
     runs-on: ubuntu-latest
